@@ -1041,7 +1041,6 @@
     const totalsPanel = document.getElementById('totals-panel');
     const appVersion = document.getElementById('app-version');
     const APP_VERSION = '2026-06-18-1';
-    const API_BASE_URL = 'http://127.0.0.1:8000';
     const DEMO_MODE = location.protocol === 'file:' || location.hostname.endsWith('github.io');
     const DEMO_PAYLOADS = {
       produse: {
@@ -1207,7 +1206,7 @@
     }
 
     async function postJson(path, body) {
-      return fetch(`${API_BASE_URL}${path}`, {
+      return fetch(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

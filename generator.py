@@ -16,16 +16,27 @@ from copy import deepcopy
 import re
 import urllib.error
 import urllib.request
+import sys
 from pathlib import Path
 
-import pythoncom
-import win32com.client as win32
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
+
+try:
+    import pythoncom
+    import win32com.client as win32
+except Exception:  # pragma: no cover - optional on non-Windows hosts
+    pythoncom = None
+    win32 = None
+
+try:
+    import pytesseract
+except Exception:  # pragma: no cover - optional in dev environments without Tesseract
+    pytesseract = None
 
 ROOT = Path(__file__).resolve().parent
 PRODUCT_TEMPLATE = ROOT / "Contract _MRB_instalare_produse.doc"
@@ -180,7 +191,8 @@ def _normalize_ocr_text(value: object) -> str:
 
 
 def _ocr_image_lines(image_path: Path) -> list[dict]:
-    script = r"""
+    if os.name == "nt" and pythoncom is not None and win32 is not None:
+        script = r"""
 param(
   [Parameter(Mandatory = $true)]
   [string]$path,
@@ -217,42 +229,75 @@ $lines = foreach ($line in $result.Lines) {
 }
 $lines | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $outPath -Encoding UTF8
 """
-    script_path = _workspace_temp_dir("ocr_script_") / "ocr.ps1"
-    output_path = script_path.with_suffix(".json")
-    script_path.write_text(script, encoding="utf-8")
-    completed = subprocess.run(
-        [
-            "powershell",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(script_path),
-            str(image_path),
-            str(output_path),
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        timeout=90,
-    )
-    if completed.returncode != 0:
+        script_path = _workspace_temp_dir("ocr_script_") / "ocr.ps1"
+        output_path = script_path.with_suffix(".json")
+        script_path.write_text(script, encoding="utf-8")
+        completed = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script_path),
+                str(image_path),
+                str(output_path),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=90,
+        )
+        if completed.returncode != 0:
+            try:
+                shutil.rmtree(script_path.parent, ignore_errors=True)
+            except Exception:
+                pass
+            raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "OCR failed")
+        payload = output_path.read_text(encoding="utf-8-sig").strip() if output_path.exists() else ""
         try:
             shutil.rmtree(script_path.parent, ignore_errors=True)
         except Exception:
             pass
-        raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "OCR failed")
-    payload = output_path.read_text(encoding="utf-8-sig").strip() if output_path.exists() else ""
+        if not payload:
+            return []
+        data = json.loads(payload)
+        if isinstance(data, dict):
+            data = [data]
+        return data if isinstance(data, list) else []
+
+    if pytesseract is None:
+        raise RuntimeError("OCR fallback requires pytesseract on non-Windows hosts.")
     try:
-        shutil.rmtree(script_path.parent, ignore_errors=True)
-    except Exception:
-        pass
-    if not payload:
-        return []
-    data = json.loads(payload)
-    if isinstance(data, dict):
-        data = [data]
-    return data if isinstance(data, list) else []
+        from PIL import Image
+    except Exception as exc:
+        raise RuntimeError("OCR fallback requires Pillow on non-Windows hosts.") from exc
+
+    with Image.open(image_path) as image:
+        image = image.convert("RGB")
+        data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+
+    lines_by_num: dict[tuple[int, int], dict] = {}
+    count = len(data.get("text", []))
+    for idx in range(count):
+        text = _clean_text(data["text"][idx])
+        if not text:
+            continue
+        line_key = (int(data.get("block_num", [0])[idx]), int(data.get("line_num", [0])[idx]))
+        entry = lines_by_num.setdefault(line_key, {"text": "", "words": []})
+        if entry["text"]:
+            entry["text"] += " "
+        entry["text"] += text
+        entry["words"].append(
+            {
+                "text": text,
+                "x": int(data.get("left", [0])[idx]),
+                "y": int(data.get("top", [0])[idx]),
+                "w": int(data.get("width", [0])[idx]),
+                "h": int(data.get("height", [0])[idx]),
+            }
+        )
+    return list(lines_by_num.values())
 
 
 def _shift_ocr_lines(lines: list[dict], dx: int = 0, dy: int = 0, *, source: str = "full") -> list[dict]:
@@ -343,6 +388,8 @@ def _extract_text_from_docx_bytes(data: bytes) -> str:
 
 
 def _extract_text_from_doc_bytes(data: bytes) -> str:
+    if os.name != "nt" or pythoncom is None or win32 is None:
+        raise RuntimeError(".doc files require Windows/Word conversion for extraction.")
     work_dir = _workspace_temp_dir("offer_doc_")
     doc_path = work_dir / "offer.doc"
     docx_path = work_dir / "offer.docx"
@@ -1620,6 +1667,11 @@ def _ensure_base_docx(template: Path) -> Path:
     base_path = _base_docx_path(template)
     if base_path.exists() and base_path.stat().st_mtime >= template.stat().st_mtime:
         return base_path
+    if os.name != "nt" or pythoncom is None or win32 is None:
+        raise RuntimeError(
+            f"Lipseste baza DOCX pentru {template.name}. Pe gazde non-Windows este nevoie de "
+            "fișierul .base.docx generat dinainte."
+        )
     pythoncom.CoInitialize()
     try:
         _convert_doc_to_docx(template, base_path)

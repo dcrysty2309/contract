@@ -1,2 +1,5 @@
 olefile
 python-docx
+Pillow
+PyMuPDF
+pytesseract

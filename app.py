@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import base64
 import traceback
+import os
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -107,8 +108,10 @@ class ContractHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), ContractHandler)
-    print("Serving on http://127.0.0.1:8000")
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
+    server = ThreadingHTTPServer((host, port), ContractHandler)
+    print(f"Serving on http://{host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
