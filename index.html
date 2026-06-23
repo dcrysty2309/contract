@@ -751,7 +751,7 @@
       </div>
 
       <div class="actions">
-        <button class="btn secondary" id="process-offer" type="button" disabled>Proceseaza cu AI</button>
+        <button class="btn secondary" id="process-offer" type="button" disabled>Generae ZAI SO</button>
       </div>
 
       <div class="form">
@@ -1513,7 +1513,7 @@
       }
 
       processOfferBtn.disabled = true;
-      processOfferBtn.textContent = 'Procesez cu AI...';
+      processOfferBtn.textContent = 'Generae ZAI SO...';
       setResult('Procesare', 'Citesc oferta si extrag datele relevante.');
 
       try {
@@ -1558,7 +1558,7 @@
           setResult('Eroare', fallbackError.message || error.message);
         }
       } finally {
-        processOfferBtn.textContent = 'Proceseaza cu AI';
+        processOfferBtn.textContent = 'Generae ZAI SO';
         processOfferBtn.disabled = !selectedOfferFiles.length;
       }
     }
