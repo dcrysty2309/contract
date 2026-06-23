@@ -1,0 +1,21 @@
+node_modules/
+__pycache__/
+*.pyc
+.tmp/
+tmp/
+render_*/
+Screenshot *.png
+WhatsApp Image *.jpeg
+playwright_check.png
+
+*.doc
+*.docx
+!Contract _MRB_instalare_produse.doc
+!Contract_ADVANCED-model-servicii.doc
+!PV_model.docx
+
+.Contract*.base.docx
+PV_demo_latest.docx
+test_contract*.docx
+check_*.docx
+rebuild_layout*.docx

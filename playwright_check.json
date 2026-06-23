@@ -1,0 +1,40 @@
+{
+  "rows": [
+    [
+      "DRONA DJI MATRICE 4T",
+      "1",
+      "buc",
+      "30340",
+      "6371.4",
+      "30340"
+    ],
+    [
+      "Discount 18% DRONA DJI MATRICE 4T",
+      "1",
+      "buc",
+      "-5461.2",
+      "-1146.85",
+      "-5461.2"
+    ],
+    [
+      "ACUMULATOR DJI MATRICE 4",
+      "3",
+      "buc",
+      "850",
+      "535.5",
+      "2550"
+    ],
+    [
+      "Mavic 3 Enterprise Series-PART 05-Battery Kit",
+      "1",
+      "buc",
+      "2575",
+      "540.75",
+      "2575"
+    ]
+  ],
+  "totals": "Totaluri\n4 produse\nSubtotal\nfara TVA\n30003.80\nRON\nTVA\n21%\n6300.80\nRON\nTotal plata\n36304.60\nRON",
+  "jsonText": "{\n  \"supplier\": \"RIZEN TECH S.R.L\",\n  \"reg_com\": \"J2019002330239\",\n  \"cui\": \"RO41165499\",\n  \"address\": \"Str. Sperantei nr. 8, com. Moara Vlasiei, Jud. Ilfov\",\n  \"contact\": \"0314339365 / office@mowow.ro\",\n  \"offerNumber\": \"\",\n  \"issueDate\": \"\",\n  \"vatRate\": 21,\n  \"currency\": \"RON\",\n  \"representative\": \"Bogdan Boroianu\",\n  \"role\": \"\",\n  \"items\": [\n    {\n      \"name\": \"DRONA DJI MATRICE 4T\",\n      \"description\": \"\",\n      \"um\": \"buc\",\n      \"qty\": 1,\n      \"priceNoVat\": 30340,\n      \"valueNoVat\": 30340,\n      \"vat\": 6371.4\n    },\n    {\n      \"name\": \"Discount 18% DRONA DJI MATRICE 4T\",\n      \"description\": \"\",\n      \"um\": \"buc\",\n      \"qty\": 1,\n      \"priceNoVat\": -5461.2,\n      \"valueNoVat\": -5461.2,\n      \"vat\": -1146.85\n    },\n    {\n      \"name\": \"ACUMULATOR DJI MATRICE 4\",\n      \"description\": \"\",\n      \"um\": \"buc\",\n      \"qty\": 3,\n      \"priceNoVat\": 850,\n      \"valueNoVat\": 2550,\n      \"vat\": 535.5\n    },\n    {\n      \"name\": \"Mavic 3 Enterprise Series-PART 05-Battery Kit\",\n      \"description\": \"\",\n      \"um\": \"buc\",\n      \"qty\": 1,\n      \"priceNoVat\": 2575,\n      \"valueNoVat\": 2575,\n      \"vat\": 540.75\n    }\n  ],\n  \"subtotalNoVat\": 30003.8,\n  \"totalVat\": 6300.8,\n  \"totalWithVat\": 36304.6,\n  \"warnings\": [\n    \"Fallback local OCR folosit dupa esec Vision: OpenAI API a raspuns cu 429: You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\"\n  ]\n}",
+  "resultText": "Oferta procesata\n\nAu fost extrase 4 pozitii din oferta. Poti corecta direct JSON-ul sau campurile din formular.",
+  "screenshotPath": "D:\\proiecte\\contracte\\playwright_check.png"
+}

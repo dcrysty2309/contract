@@ -1,0 +1,1962 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ContractFlow</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #18212f;
+      --muted: #667085;
+      --line: #d7dee8;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --accent-soft: #d9f4ef;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(15, 118, 110, 0.10), transparent 30%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      margin: 10px auto 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+      max-width: 64ch;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 10px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(215, 222, 232, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+
+    .screen { display: none; }
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .field[hidden] {
+      display: none !important;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      margin: 0 0 6px;
+      font-size: 20px;
+    }
+
+    .section-subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .choice {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .choice:hover {
+      border-color: rgba(15, 118, 110, 0.45);
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .choice.active {
+      border-color: rgba(15, 118, 110, 0.65);
+      background: linear-gradient(180deg, rgba(217, 244, 239, 0.8), #fff);
+    }
+
+    .choice strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+
+    .choice span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .back {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .upload-box {
+      border: 1.5px dashed #aab8c7;
+      background: #fbfdff;
+      border-radius: 18px;
+      padding: 22px;
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 30px;
+      cursor: pointer;
+    }
+
+    .upload-box strong {
+      font-size: 16px;
+    }
+
+    .upload-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .file-row.empty {
+      color: var(--muted);
+      background: #fff;
+      border-style: dashed;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field.field-wide {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .field input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .table {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .table-head,
+    .table-row {
+      display: grid;
+      grid-template-columns: 1.45fr 0.45fr 0.45fr 0.8fr 0.55fr 0.65fr 0.8fr 0.42fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .table-head {
+      padding: 12px 14px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .table-head span:nth-child(n + 2),
+    .table-row span:nth-child(n + 2) {
+      text-align: center;
+    }
+
+    .table-row {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .totals-panel {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), #fff);
+      overflow: hidden;
+    }
+
+    .totals-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #0f766e;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .totals-header span {
+      font-weight: 600;
+      opacity: 0.92;
+    }
+
+    .totals-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr;
+      gap: 10px;
+      align-items: center;
+      padding: 11px 14px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .totals-row:first-child {
+      border-top: 0;
+    }
+
+    .totals-row .right {
+      text-align: right;
+    }
+
+    .totals-row .amount {
+      justify-self: end;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .totals-row.total {
+      background: rgba(15, 118, 110, 0.08);
+      font-weight: 700;
+    }
+
+    .cell-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      text-align: center;
+      padding: 6px 4px;
+      outline: none;
+    }
+
+    .cell-input[readonly] {
+      background: #f3f4f6;
+      color: #4b5563;
+      border-radius: 6px;
+      cursor: not-allowed;
+      padding-inline: 6px;
+    }
+
+    .cell-input[readonly]::placeholder {
+      color: #9ca3af;
+    }
+
+    .table-row .name {
+      text-align: left;
+    }
+
+    .table-row .name .cell-input {
+      text-align: left;
+    }
+
+    .vat-rate,
+    .row-delete {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      padding: 8px 8px;
+      min-height: 36px;
+    }
+
+    .vat-rate {
+      text-align: center;
+    }
+
+    .vat-amount {
+      font-weight: 700;
+    }
+
+    .row-delete {
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #be123c;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 8px 6px;
+    }
+
+    .row-delete:hover {
+      background: #ffe4e6;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      width: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+      color: #fff;
+    }
+
+    .btn.secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .actions .btn {
+      flex: 0 0 auto;
+      min-width: 170px;
+    }
+
+    .result-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 118, 110, 0.2);
+      background: linear-gradient(180deg, rgba(217, 244, 239, 0.55), #fff);
+    }
+
+    .pv-decision {
+      padding: 18px;
+      border-color: rgba(15, 118, 110, 0.24);
+      background:
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.10), transparent 36%),
+        linear-gradient(180deg, rgba(217, 244, 239, 0.72), #fff);
+    }
+
+    .pv-decision .badge {
+      margin-bottom: 12px;
+    }
+
+    .pv-decision h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .pv-decision .actions {
+      margin-top: 14px;
+    }
+
+    .pv-decision-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .pv-decision-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 118, 110, 0.14);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .pv-decision-step strong {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      flex: 0 0 auto;
+      font-size: 12px;
+    }
+
+    .pv-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 0;
+    }
+
+    .pv-summary-card {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      background: #fff;
+    }
+
+    .pv-summary-card span {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .pv-summary-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .pv-flow {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0 4px;
+    }
+
+    .pv-flow-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(215, 222, 232, 0.95);
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .pv-flow-item.active {
+      border-color: rgba(15, 118, 110, 0.28);
+      background: rgba(217, 244, 239, 0.78);
+      color: var(--accent-dark);
+    }
+
+    .result-box h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .result-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .summary {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .json-box {
+      margin-top: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .json-box header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .json-box header strong {
+      font-size: 13px;
+    }
+
+    .json-box header span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .json-editor {
+      width: 100%;
+      min-height: 220px;
+      border: 0;
+      outline: none;
+      resize: vertical;
+      padding: 14px;
+      font: 12px/1.5 Consolas, "Courier New", monospace;
+      color: var(--text);
+      background: #fff;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 16px 12px 28px; }
+      .panel { padding: 18px; }
+      .choice-grid,
+      .form { grid-template-columns: 1fr; }
+      .table-head,
+      .table-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .table-head span:nth-child(n + 3),
+      .table-row span:nth-child(n + 3) {
+        display: none;
+      }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .file-row { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="hero">
+      <h1 class="title">ContractFlow</h1>
+      <p class="subtitle">Flux simplu: alegi tipul de contract, setezi numarul contractului si al ofertei, incarci oferta furnizorului si generezi contractul pentru descarcare.</p>
+      <div class="version-badge" id="app-version"></div>
+    </div>
+
+    <section class="panel screen active" id="screen-1">
+      <div class="step-label">Pasul 1</div>
+      <h2 class="section-title">Ce tip de contract vrei?</h2>
+      <p class="section-subtitle">Alege una dintre cele doua variante.</p>
+
+      <div class="choice-grid">
+        <button class="choice active" data-type="produse" type="button">
+          <strong>Produse</strong>
+          <span>Achizitii de bunuri, echipamente, consumabile.</span>
+        </button>
+        <button class="choice" data-type="servicii" type="button">
+          <strong>Servicii</strong>
+          <span>Consultanta, instalare, mentenanta, executie servicii.</span>
+        </button>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="go-to-upload" type="button">Continua</button>
+      </div>
+    </section>
+
+    <section class="panel screen" id="screen-2">
+      <div class="topbar">
+        <div>
+          <div class="step-label">Pasul 2</div>
+          <h2 class="section-title">Seteaza numerele documentelor</h2>
+        </div>
+        <button class="back" id="back-to-type" type="button">Inapoi</button>
+      </div>
+
+      <p class="section-subtitle">Completeaza numarul contractului si numarul ofertei inainte sa continui la incarcare.</p>
+
+      <div class="form" style="margin-top: 20px;">
+        <div class="field">
+          <label>Numar contract</label>
+          <input id="contract-no" type="text" value="" placeholder="Ex: 184/15.06.2026" />
+        </div>
+        <div class="field">
+          <label>Numar oferta</label>
+          <input id="offer-no" type="text" value="" placeholder="Ex: PROF26 0142" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="continue-to-upload" type="button" disabled>Continua</button>
+      </div>
+    </section>
+
+    <section class="panel screen" id="screen-3">
+      <div class="topbar">
+        <div>
+          <div class="step-label">Pasul 3</div>
+          <h2 class="section-title">Incarca oferta de la furnizor</h2>
+        </div>
+        <button class="back" id="back-to-step-2" type="button">Inapoi</button>
+      </div>
+
+      <p class="section-subtitle">Incarci oferta si completezi datele furnizorului. Apoi generezi contractul.</p>
+
+      <div class="upload-box">
+        <strong>Drop zone pentru oferta</strong>
+        <p>PDF, JPG sau PNG. Poți selecta una sau două imagini pentru o ofertă împărțită în două părți. Rezultatul este extras cu AI Vision.</p>
+        <input id="offer-file" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple class="hidden" />
+        <div class="file-row empty" id="offer-file-row">
+          <span id="offer-file-name">Niciun fisier selectat</span>
+          <span class="badge" id="offer-file-badge">asteptare</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn secondary" id="process-offer" type="button" disabled>Proceseaza cu AI</button>
+      </div>
+
+      <div class="form">
+        <div class="field">
+          <label>Furnizor</label>
+          <input id="supplier" type="text" value="" placeholder="Denumire furnizor" />
+        </div>
+        <div class="field">
+          <label>CUI furnizor</label>
+          <input id="supplier-cui" type="text" value="" placeholder="CUI" />
+        </div>
+        <div class="field">
+          <label>Reg. com.</label>
+          <input id="supplier-regcom" type="text" value="" placeholder="J..." />
+        </div>
+        <div class="field">
+          <label>Adresa</label>
+          <input id="supplier-address" type="text" value="" placeholder="Adresa furnizor" />
+        </div>
+        <div class="field">
+          <label>Telefon / Email</label>
+          <input id="supplier-contact" type="text" value="" placeholder="Telefon / email" />
+        </div>
+        <div class="field">
+          <label>Reprezentant</label>
+          <input id="supplier-representative" type="text" value="" placeholder="Nume reprezentant" />
+        </div>
+        <div class="field">
+          <label>Functie</label>
+          <input id="supplier-role" type="text" value="" placeholder="Functie" />
+        </div>
+        <div class="field">
+          <label>Garantie</label>
+          <input id="supplier-garantie" type="text" value="" placeholder="12" />
+        </div>
+        <div class="field field-wide">
+          <label>Adresa livrare</label>
+          <input id="delivery-address" type="text" value="" placeholder="Adresa livrare" />
+        </div>
+      </div>
+
+      <div class="json-box">
+        <header>
+          <strong>JSON extras</strong>
+          <span>Editabil, pentru verificare sau corectare manuala</span>
+        </header>
+        <textarea class="json-editor" id="offer-json" spellcheck="false" placeholder="JSON-ul extras va aparea aici"></textarea>
+        <div class="actions" style="padding: 0 14px 14px; margin-top: 0;">
+          <button class="btn secondary" id="apply-json" type="button">Aplica JSON</button>
+        </div>
+      </div>
+
+      <div class="table" aria-label="Produse din oferta">
+        <div class="table-head">
+          <span>Denumire</span>
+          <span>Cant.</span>
+          <span>U.M.</span>
+          <span>Pret unitar fara TVA</span>
+          <span>Cota TVA</span>
+          <span>TVA</span>
+          <span>Valoare fara TVA</span>
+          <span></span>
+        </div>
+
+        <div class="table-row">
+          <span class="name"><input class="cell-input" value="" placeholder="Denumire produs" /></span>
+          <span><input class="cell-input" value="" placeholder="1" /></span>
+          <span><input class="cell-input" value="" placeholder="buc" /></span>
+          <span><input class="cell-input" value="" placeholder="0.00" /></span>
+          <span>
+            <select class="vat-rate">
+              <option value="21">21%</option>
+              <option value="19">19%</option>
+              <option value="9">9%</option>
+              <option value="5">5%</option>
+              <option value="0">0%</option>
+            </select>
+          </span>
+          <span><input class="cell-input vat-amount" value="" placeholder="—" readonly /></span>
+          <span><input class="cell-input" value="" placeholder="—" readonly /></span>
+          <span><button class="row-delete" type="button" aria-label="Sterge rand">X</button></span>
+        </div>
+        <div class="table-row">
+          <span class="name"><input class="cell-input" value="" placeholder="Denumire produs" /></span>
+          <span><input class="cell-input" value="" placeholder="1" /></span>
+          <span><input class="cell-input" value="" placeholder="buc" /></span>
+          <span><input class="cell-input" value="" placeholder="0.00" /></span>
+          <span>
+            <select class="vat-rate">
+              <option value="21">21%</option>
+              <option value="19">19%</option>
+              <option value="9">9%</option>
+              <option value="5">5%</option>
+              <option value="0">0%</option>
+            </select>
+          </span>
+          <span><input class="cell-input vat-amount" value="" placeholder="—" readonly /></span>
+          <span><input class="cell-input" value="" placeholder="—" readonly /></span>
+          <span><button class="row-delete" type="button" aria-label="Sterge rand">X</button></span>
+        </div>
+        <div class="table-row">
+          <span class="name"><input class="cell-input" value="" placeholder="Denumire produs" /></span>
+          <span><input class="cell-input" value="" placeholder="1" /></span>
+          <span><input class="cell-input" value="" placeholder="buc" /></span>
+          <span><input class="cell-input" value="" placeholder="0.00" /></span>
+          <span>
+            <select class="vat-rate">
+              <option value="21">21%</option>
+              <option value="19">19%</option>
+              <option value="9">9%</option>
+              <option value="5">5%</option>
+              <option value="0">0%</option>
+            </select>
+          </span>
+          <span><input class="cell-input vat-amount" value="" placeholder="—" readonly /></span>
+          <span><input class="cell-input" value="" placeholder="—" readonly /></span>
+          <span><button class="row-delete" type="button" aria-label="Sterge rand">X</button></span>
+        </div>
+        <div class="table-row">
+          <span class="name"><input class="cell-input" value="" placeholder="Denumire produs" /></span>
+          <span><input class="cell-input" value="" placeholder="1" /></span>
+          <span><input class="cell-input" value="" placeholder="buc" /></span>
+          <span><input class="cell-input" value="" placeholder="0.00" /></span>
+          <span>
+            <select class="vat-rate">
+              <option value="21">21%</option>
+              <option value="19">19%</option>
+              <option value="9">9%</option>
+              <option value="5">5%</option>
+              <option value="0">0%</option>
+            </select>
+          </span>
+          <span><input class="cell-input vat-amount" value="" placeholder="—" readonly /></span>
+          <span><input class="cell-input" value="" placeholder="—" readonly /></span>
+          <span><button class="row-delete" type="button" aria-label="Sterge rand">X</button></span>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top: 12px;">
+        <button class="btn secondary" id="add-row-btn" type="button">Adauga rand</button>
+      </div>
+
+      <div class="totals-panel" id="totals-panel" hidden></div>
+
+      <div class="actions">
+        <button class="btn primary" id="generate-btn" type="button" disabled>Genereaza contract</button>
+        <a class="btn secondary" id="download-link" href="#" download="contract.rtf" style="display:none;">Descarca contract</a>
+      </div>
+
+      <div class="result-box" id="result-box" hidden></div>
+      <div class="result-box hidden pv-decision" id="pv-ask">
+        <div class="badge">Pas optional</div>
+        <h3>Ai nevoie si de proces verbal?</h3>
+        <p>Contractul este gata. Daca ai nevoie si de PV, deschidem un formular scurt care pastreaza valorile preluate si iti cere doar datele specifice documentului.</p>
+        <div class="pv-decision-steps">
+          <div class="pv-decision-step"><strong>1</strong><span>Confirmi numarul din registru</span></div>
+          <div class="pv-decision-step"><strong>2</strong><span>Completezi campurile specifice PV</span></div>
+          <div class="pv-decision-step"><strong>3</strong><span>Generezi si descarci documentul</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="pv-yes" type="button">Da, completez PV</button>
+          <button class="btn secondary" id="pv-decline" type="button">Nu, termin aici</button>
+        </div>
+      </div>
+      <div class="summary" id="selected-summary">Tip selectat: <strong>Produse</strong></div>
+    </section>
+
+    <section class="panel screen" id="screen-4">
+      <div class="topbar">
+        <div>
+          <div class="step-label">Pasul 4</div>
+          <h2 class="section-title">Completeaza procesul verbal</h2>
+        </div>
+        <button class="back" id="back-to-contract" type="button">Inapoi</button>
+      </div>
+
+      <p class="section-subtitle">Am pastrat formatul modelului si folosim valorile extrase din contract. Completeaza numarul PV din registru si campurile specifice procesului verbal.</p>
+
+      <div class="pv-flow" aria-label="Flux proces verbal">
+        <div class="pv-flow-item active">1. Date preluate din contract</div>
+        <div class="pv-flow-item active">2. Completezi datele PV</div>
+        <div class="pv-flow-item">3. Descarci documentul</div>
+      </div>
+
+      <div class="result-box" id="pv-summary"></div>
+
+      <div class="form" style="margin-top: 18px;">
+        <div class="field">
+          <label>Numar PV din registru</label>
+          <input id="pv-number" type="text" value="" placeholder="Ex: 273/23.01.2026" />
+        </div>
+        <div class="field">
+          <label>Data PV</label>
+          <input id="pv-date" type="text" value="" placeholder="Ex: 23.01.2026" />
+        </div>
+        <div class="field">
+          <label>Numar referat</label>
+          <input id="pv-referat-no" type="text" value="" placeholder="Ex: 151/20.01.2026" />
+        </div>
+        <div class="field">
+          <label>Data referat</label>
+          <input id="pv-referat-date" type="text" value="" placeholder="Ex: 20.01.2026" />
+        </div>
+        <div class="field">
+          <label>Cod CPV</label>
+          <input id="pv-cpv" type="text" value="" placeholder="Ex: 12345678-9" />
+        </div>
+        <div class="field">
+          <label>Au mai fost achizitii pe acest CPV?</label>
+          <select id="pv-previous-check">
+            <option value="no" selected>Nu</option>
+            <option value="yes">Da</option>
+          </select>
+        </div>
+        <div class="field" id="pv-previous-value-field" hidden>
+          <label>Valoare achizitii anterioare</label>
+          <input id="pv-previous-value" type="text" value="" placeholder="Ex: 12500.00" />
+        </div>
+        <div class="field">
+          <label>Obiect achizitie</label>
+          <input id="pv-object" type="text" value="" placeholder="Descrierea achizitiei" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="generate-pv-btn" type="button" disabled>Genereaza proces verbal</button>
+        <a class="btn secondary" id="download-pv-link" href="#" download="proces_verbal.docx" style="display:none;">Descarca PV</a>
+      </div>
+
+      <div class="result-box" id="pv-result" hidden></div>
+    </section>
+  </main>
+
+  <script>
+    const screen1 = document.getElementById('screen-1');
+    const screen2 = document.getElementById('screen-2');
+    const screen3 = document.getElementById('screen-3');
+    const screen4 = document.getElementById('screen-4');
+    const choices = document.querySelectorAll('.choice');
+    const summary = document.getElementById('selected-summary');
+    const goToUpload = document.getElementById('go-to-upload');
+    const backToType = document.getElementById('back-to-type');
+    const continueToUpload = document.getElementById('continue-to-upload');
+    const backToStep2 = document.getElementById('back-to-step-2');
+    const uploadBox = document.querySelector('.upload-box');
+    const offerFileInput = document.getElementById('offer-file');
+    const offerFileRow = document.getElementById('offer-file-row');
+    const offerFileName = document.getElementById('offer-file-name');
+    const offerFileBadge = document.getElementById('offer-file-badge');
+    const processOfferBtn = document.getElementById('process-offer');
+    const addRowBtn = document.getElementById('add-row-btn');
+    const generateBtn = document.getElementById('generate-btn');
+    const downloadLink = document.getElementById('download-link');
+    const resultBox = document.getElementById('result-box');
+    const pvAsk = document.getElementById('pv-ask');
+    const pvYesBtn = document.getElementById('pv-yes');
+    const pvNoBtn = document.getElementById('pv-decline');
+    const backToContractBtn = document.getElementById('back-to-contract');
+    const pvSummary = document.getElementById('pv-summary');
+    const pvNoInput = document.getElementById('pv-number');
+    const pvDateInput = document.getElementById('pv-date');
+    const pvReferatNoInput = document.getElementById('pv-referat-no');
+    const pvReferatDateInput = document.getElementById('pv-referat-date');
+    const pvCpvInput = document.getElementById('pv-cpv');
+    const pvPreviousCheckInput = document.getElementById('pv-previous-check');
+    const pvPreviousValueField = document.getElementById('pv-previous-value-field');
+    const pvPreviousValueInput = document.getElementById('pv-previous-value');
+    const pvObjectInput = document.getElementById('pv-object');
+    const generatePvBtn = document.getElementById('generate-pv-btn');
+    const downloadPvLink = document.getElementById('download-pv-link');
+    const pvResult = document.getElementById('pv-result');
+    const PV_RESPONSIBLE = 'Diaconescu Cristian';
+    const contractNoInput = document.getElementById('contract-no');
+    const supplierInput = document.getElementById('supplier');
+    const offerNoInput = document.getElementById('offer-no');
+    const supplierCuiInput = document.getElementById('supplier-cui');
+    const supplierRegComInput = document.getElementById('supplier-regcom');
+    const supplierAddressInput = document.getElementById('supplier-address');
+    const deliveryAddressInput = document.getElementById('delivery-address');
+    const supplierContactInput = document.getElementById('supplier-contact');
+    const supplierRepresentativeInput = document.getElementById('supplier-representative');
+    const supplierRoleInput = document.getElementById('supplier-role');
+    const supplierGarantieInput = document.getElementById('supplier-garantie');
+    const offerJson = document.getElementById('offer-json');
+    const applyJsonBtn = document.getElementById('apply-json');
+    const table = document.querySelector('.table');
+    const totalsPanel = document.getElementById('totals-panel');
+    const appVersion = document.getElementById('app-version');
+    const APP_VERSION = '2026-06-18-1';
+    const tableHead = table.querySelector('.table-head');
+    const tableBodyRows = Array.from(document.querySelectorAll('.table-row'));
+    let selectedType = 'produse';
+    let objectUrl = null;
+    let pvObjectUrl = null;
+    let offerProcessed = false;
+    let latestContractPayload = null;
+    let selectedOfferFiles = [];
+
+    function updateContinueState() {
+      const contractNo = contractNoInput.value.trim();
+      const offerNo = offerNoInput.value.trim();
+      continueToUpload.disabled = !(contractNo && offerNo);
+    }
+
+    function hideDownload() {
+      downloadLink.style.display = 'none';
+      resultBox.hidden = true;
+      resultBox.innerHTML = '';
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      if (screen4.classList.contains('active')) {
+        closePvScreen();
+      }
+      pvAsk.classList.add('hidden');
+      pvResult.hidden = true;
+      pvResult.innerHTML = '';
+      downloadPvLink.style.display = 'none';
+      if (pvObjectUrl) {
+        URL.revokeObjectURL(pvObjectUrl);
+        pvObjectUrl = null;
+      }
+    }
+
+    function todayRomanianDate() {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      return `${day}.${month}.${year}`;
+    }
+
+    function buildContractPayload() {
+      const totals = computeTotalsFromRows();
+      return {
+        type: selectedType,
+        contract_no: contractNoInput.value,
+        offer_no: offerNoInput.value,
+        supplier: supplierInput.value,
+        cui: supplierCuiInput.value,
+        reg_com: supplierRegComInput.value,
+        address: supplierAddressInput.value,
+        delivery_address: deliveryAddressInput.value,
+        contact: supplierContactInput.value,
+        representative: supplierRepresentativeInput.value,
+        role: supplierRoleInput.value,
+        garantie: supplierGarantieInput.value,
+        items: totals.items,
+        subtotalNoVat: totals.subtotal,
+        totalVat: totals.vat,
+        totalWithVat: totals.total,
+      };
+    }
+
+    function buildPvPayload() {
+      const base = latestContractPayload || buildContractPayload();
+      return {
+        ...base,
+        responsible_procurement: PV_RESPONSIBLE,
+        pv_no: pvNoInput.value,
+        pv_date: pvDateInput.value,
+        pv_referat_no: pvReferatNoInput.value,
+        pv_referat_date: pvReferatDateInput.value,
+        pv_cpv: pvCpvInput.value,
+        pv_previous_exists: pvPreviousCheckInput.value === 'yes',
+        pv_previous_value: pvPreviousValueInput.value,
+        pv_object: pvObjectInput.value,
+      };
+    }
+
+    function openPvScreen() {
+      const base = latestContractPayload || buildContractPayload();
+      const itemLabel = selectedType === 'servicii' ? 'servicii' : 'produse';
+      const firstItem = (base.items || []).find((item) => item?.name)?.name || '';
+      const objectText = firstItem || (selectedType === 'servicii' ? 'servicii achizitionate' : 'produse achizitionate');
+      const totalNoVat = Number(base.subtotalNoVat ?? 0);
+      const totalWithVat = Number(base.totalWithVat ?? 0);
+      pvSummary.innerHTML = `
+        <div class="totals-header">
+          <span>Date preluate automat</span>
+          <span>${itemLabel}</span>
+        </div>
+        <div class="pv-summary-grid">
+          <div class="pv-summary-card">
+            <span>Responsabil achizitie</span>
+            <strong>${PV_RESPONSIBLE}</strong>
+          </div>
+          <div class="pv-summary-card">
+            <span>Furnizor</span>
+            <strong>${base.supplier || '________'}</strong>
+          </div>
+          <div class="pv-summary-card">
+            <span>Subtotal fara TVA</span>
+            <strong>${totalNoVat.toFixed(2)} RON</strong>
+          </div>
+          <div class="pv-summary-card">
+            <span>Total cu TVA</span>
+            <strong>${totalWithVat.toFixed(2)} RON</strong>
+          </div>
+        </div>
+      `;
+      setInputValue(pvNoInput, '');
+      setInputValue(pvDateInput, todayRomanianDate());
+      setInputValue(pvReferatNoInput, '151/20.01.2026');
+      setInputValue(pvReferatDateInput, '20.01.2026');
+      setInputValue(pvCpvInput, '');
+      pvPreviousCheckInput.value = 'no';
+      pvPreviousValueInput.value = '';
+      pvPreviousValueField.hidden = true;
+      updatePvPreviousValueState();
+      setInputValue(pvObjectInput, objectText);
+      hideDownload();
+      screen3.classList.remove('active');
+      screen4.classList.add('active');
+      pvResult.hidden = true;
+      generatePvBtn.disabled = true;
+      pvNoInput.focus();
+      screen4.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closePvScreen() {
+      screen4.classList.remove('active');
+      screen3.classList.add('active');
+    }
+
+    function setResult(title, text) {
+      resultBox.hidden = false;
+      resultBox.innerHTML = `<h3>${title}</h3><p>${text}</p>`;
+    }
+
+    function formatApiError(response, payload) {
+      const statusText = response.statusText ? ` ${response.statusText}` : '';
+      const base = `HTTP ${response.status}${statusText}.`;
+      if (payload?.error) {
+        return `${base} ${payload.error}`;
+      }
+      return `${base} Procesarea a esuat fara un mesaj detaliat de la backend.`;
+    }
+
+    function setInputValue(input, value) {
+      input.value = value || '';
+    }
+
+    function updatePvGenerateState() {
+      generatePvBtn.disabled = !pvNoInput.value.trim();
+    }
+
+    function updatePvPreviousValueState() {
+      const hasPrevious = pvPreviousCheckInput.value === 'yes';
+      pvPreviousValueField.hidden = !hasPrevious;
+      if (!hasPrevious) {
+        pvPreviousValueInput.value = '';
+      }
+    }
+
+    updatePvPreviousValueState();
+
+    function buildPreviewJson(payload) {
+      return {
+        supplier: payload?.supplier || '',
+        reg_com: payload?.reg_com || '',
+        cui: payload?.cui || '',
+        address: payload?.address || '',
+        delivery_address: payload?.delivery_address || '',
+        contact: payload?.contact || '',
+        offerNumber: payload?.offerNumber || '',
+        issueDate: payload?.issueDate || '',
+        vatRate: payload?.vatRate ?? 21,
+        currency: payload?.currency || 'RON',
+        representative: payload?.representative || '',
+        role: payload?.role || '',
+        garantie: payload?.garantie || '',
+        items: Array.isArray(payload?.items) ? payload.items : [],
+        subtotalNoVat: payload?.subtotalNoVat ?? 0,
+        totalVat: payload?.totalVat ?? 0,
+        totalWithVat: payload?.totalWithVat ?? 0,
+        warnings: Array.isArray(payload?.warnings) ? payload.warnings : [],
+      };
+    }
+
+    function renderOfferJson(payload) {
+      offerJson.value = JSON.stringify(buildPreviewJson(payload), null, 2);
+    }
+
+    function parseNumericValue(value) {
+      const text = String(value ?? '').trim().replace(',', '.');
+      const cleaned = text.replace(/[^0-9.-]/g, '');
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function sanitizeNumericInput(input) {
+      const raw = String(input.value ?? '');
+      let normalized = raw.replace(',', '.').replace(/[^0-9.-]/g, '');
+      const minusIndex = normalized.indexOf('-');
+      if (minusIndex > 0) {
+        normalized = `-${normalized.replace(/-/g, '')}`;
+      } else if (minusIndex === 0) {
+        normalized = `-${normalized.slice(1).replace(/-/g, '')}`;
+      }
+      const parts = normalized.split('.');
+      if (parts.length > 2) {
+        normalized = `${parts.shift()}.${parts.join('')}`;
+      }
+      input.value = normalized;
+      return normalized;
+    }
+
+    function computeTotalsFromRows() {
+      const items = readItemsFromTable();
+      const subtotal = items.reduce((sum, item) => sum + parseNumericValue(item.valueNoVat), 0);
+      const vat = items.reduce((sum, item) => sum + parseNumericValue(item.vat), 0);
+      const total = subtotal + vat;
+      const vatRates = Array.from(new Set(items.map((item) => String(item.vatRate || '21'))));
+      return {
+        items,
+        subtotal,
+        vat,
+        total,
+        itemCount: items.length,
+        vatRates,
+      };
+    }
+
+    function renderTotals(payload) {
+      const computed = computeTotalsFromRows();
+      const subtotal = Number.isFinite(computed.subtotal) ? computed.subtotal : Number(payload?.subtotalNoVat ?? 0);
+      const vat = Number.isFinite(computed.vat) ? computed.vat : Number(payload?.totalVat ?? 0);
+      const total = Number.isFinite(computed.total) ? computed.total : Number(payload?.totalWithVat ?? subtotal + vat);
+      const vatRate = computed.itemCount === 0
+        ? '21%'
+        : (computed.vatRates.length === 1 ? `${computed.vatRates[0]}%` : 'mixt');
+      const itemCount = computed.itemCount || (Array.isArray(payload?.items) ? payload.items.length : 0);
+      totalsPanel.hidden = false;
+      totalsPanel.innerHTML = `
+        <div class="totals-header">
+          <span>Totaluri</span>
+          <span>${itemCount} produse</span>
+        </div>
+        <div class="totals-row">
+          <div><strong>Subtotal</strong></div>
+          <div class="right">fara TVA</div>
+          <div class="right amount">${subtotal.toFixed(2)}</div>
+          <div class="right">RON</div>
+        </div>
+        <div class="totals-row">
+          <div><strong>TVA</strong></div>
+          <div class="right">${vatRate}</div>
+          <div class="right amount">${vat.toFixed(2)}</div>
+          <div class="right">RON</div>
+        </div>
+        <div class="totals-row total">
+          <div><strong>Total plata</strong></div>
+          <div class="right"></div>
+          <div class="right amount">${total.toFixed(2)}</div>
+          <div class="right">RON</div>
+        </div>
+      `;
+    }
+
+    function applyOfferJson() {
+      try {
+        const payload = JSON.parse(offerJson.value || '{}');
+        setInputValue(supplierInput, payload.supplier);
+        setInputValue(supplierCuiInput, payload.cui);
+        setInputValue(supplierRegComInput, payload.reg_com);
+        setInputValue(supplierAddressInput, payload.address);
+        setInputValue(deliveryAddressInput, payload.delivery_address);
+        setInputValue(supplierContactInput, payload.contact);
+        if (payload.offerNumber) {
+          setInputValue(offerNoInput, payload.offerNumber);
+        }
+        setInputValue(supplierRepresentativeInput, payload.representative);
+        setInputValue(supplierRoleInput, payload.role);
+        setInputValue(supplierGarantieInput, payload.garantie);
+        renderItems(payload.items || []);
+        renderTotals(payload);
+        offerProcessed = true;
+        generateBtn.disabled = false;
+        setResult('JSON aplicat', 'Formularul a fost actualizat din JSON-ul editat.');
+      } catch (error) {
+        setResult('Eroare JSON', 'Nu am putut citi JSON-ul editat: ' + error.message);
+      }
+    }
+
+    function describeOfferFiles(files) {
+      if (!files.length) {
+        return 'Niciun fisier selectat';
+      }
+      if (files.length === 1) {
+        return files[0].name;
+      }
+      return `${files.length} fisiere selectate: ${files.map((file) => file.name).join(' + ')}`;
+    }
+
+    function setOfferFile(files) {
+      selectedOfferFiles = Array.isArray(files) ? files.slice(0, 2) : [];
+      if (!selectedOfferFiles.length) {
+        offerFileName.textContent = 'Niciun fisier selectat';
+        offerFileBadge.textContent = 'asteptare';
+        offerFileRow.classList.add('empty');
+        processOfferBtn.disabled = true;
+        offerProcessed = false;
+        generateBtn.disabled = true;
+        offerJson.value = '';
+        return;
+      }
+      offerFileName.textContent = describeOfferFiles(selectedOfferFiles);
+      offerFileBadge.textContent = 'incarcat';
+      offerFileRow.classList.remove('empty');
+      processOfferBtn.disabled = false;
+      offerProcessed = false;
+      generateBtn.disabled = true;
+      hideDownload();
+    }
+
+    async function processOfferFile() {
+      const files = selectedOfferFiles.length ? selectedOfferFiles : Array.from(offerFileInput.files || []);
+      if (!files.length) {
+        setResult('Eroare', 'Alege una sau doua fisiere de oferta inainte de procesare.');
+        return;
+      }
+      if (files.length > 2) {
+        setResult('Eroare', 'Selecteaza maximum doua fisiere pentru oferta.');
+        return;
+      }
+
+      processOfferBtn.disabled = true;
+      processOfferBtn.textContent = 'Procesez cu AI...';
+      setResult('Procesare', 'Citesc oferta si extrag datele relevante.');
+
+      try {
+        const [primaryFile, ...extraFiles] = files;
+        const fileData = await fileToBase64(primaryFile);
+        const extraPayload = await Promise.all(extraFiles.map(async (file, index) => ({
+          file_name: file.name,
+          mime_type: file.type || '',
+          file_data: await fileToBase64(file),
+          index,
+        })));
+        const response = await fetch('http://127.0.0.1:8000/api/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: selectedType,
+            file_name: primaryFile.name,
+            mime_type: primaryFile.type || '',
+            file_data: fileData,
+            files: extraPayload,
+          }),
+        });
+
+        if (!response.ok) {
+          let message = formatApiError(response, null);
+          try {
+            const payload = await response.json();
+            message = formatApiError(response, payload);
+          } catch (_) {}
+          throw new Error(message);
+        }
+
+        const payload = await response.json();
+        setInputValue(supplierInput, payload.supplier);
+        setInputValue(supplierCuiInput, payload.cui);
+        setInputValue(supplierRegComInput, payload.reg_com);
+        setInputValue(supplierAddressInput, payload.address);
+        setInputValue(deliveryAddressInput, payload.delivery_address);
+        setInputValue(supplierContactInput, payload.contact);
+        setInputValue(supplierRepresentativeInput, payload.representative);
+        setInputValue(supplierRoleInput, payload.role);
+        setInputValue(supplierGarantieInput, payload.garantie);
+        if (payload.offerNumber) {
+          setInputValue(offerNoInput, payload.offerNumber);
+        }
+        renderItems(payload.items || []);
+        renderTotals(payload);
+        renderOfferJson(payload);
+        offerProcessed = true;
+        generateBtn.disabled = false;
+        offerFileBadge.textContent = 'procesat';
+        setResult('Oferta procesata', `Au fost extrase ${Array.isArray(payload.items) ? payload.items.length : 0} pozitii din oferta. Poti corecta direct JSON-ul sau campurile din formular.`);
+      } catch (error) {
+        offerProcessed = false;
+        generateBtn.disabled = true;
+        offerFileBadge.textContent = 'eroare';
+        setResult('Eroare', error.message);
+      } finally {
+        processOfferBtn.textContent = 'Proceseaza cu AI';
+        processOfferBtn.disabled = !selectedOfferFiles.length;
+      }
+    }
+
+    function resetProcessingState() {
+      offerProcessed = false;
+      generateBtn.disabled = true;
+      processOfferBtn.disabled = !selectedOfferFiles.length;
+      offerFileBadge.textContent = selectedOfferFiles.length ? 'incarcat' : 'asteptare';
+    }
+
+    function createItemInput(value, placeholder, extraClass = '', field = '') {
+      const input = document.createElement('input');
+      input.className = `cell-input ${extraClass}`.trim();
+      input.value = value ?? '';
+      input.placeholder = placeholder;
+      input.autocomplete = 'off';
+      if (field) {
+        input.dataset.field = field;
+      }
+      const isNumeric = ['qty', 'priceNoVat', 'vat', 'valueNoVat'].includes(field);
+      if (isNumeric) {
+        input.inputMode = 'decimal';
+        input.dataset.numeric = 'true';
+        if (field === 'vat' || field === 'valueNoVat') {
+          input.readOnly = true;
+        }
+        input.addEventListener('input', () => {
+          sanitizeNumericInput(input);
+          const row = input.closest('.table-row');
+          if (row) {
+            recalcItemRow(row);
+          }
+          renderTotals({});
+        });
+        input.addEventListener('blur', () => {
+          sanitizeNumericInput(input);
+          const row = input.closest('.table-row');
+          if (row) {
+            recalcItemRow(row);
+          }
+          renderTotals({});
+        });
+      } else {
+        input.addEventListener('input', () => {
+          renderTotals({});
+        });
+      }
+      return input;
+    }
+
+    function createVatRateSelect(value) {
+      const select = document.createElement('select');
+      select.className = 'vat-rate';
+      select.dataset.field = 'vatRate';
+      [21, 19, 9, 5, 0].forEach((rate) => {
+        const option = document.createElement('option');
+        option.value = String(rate);
+        option.textContent = `${rate}%`;
+        select.appendChild(option);
+      });
+      const normalized = Number.parseFloat(String(value ?? '').replace(',', '.'));
+      select.value = Number.isFinite(normalized) ? String(normalized) : '21';
+      select.addEventListener('change', () => {
+        const row = select.closest('.table-row');
+        if (row) {
+          recalcItemRow(row);
+        }
+        renderTotals({});
+      });
+      return select;
+    }
+
+    function normalizeItem(item = {}) {
+      const qty = item.qty ?? item.quantity ?? '';
+      const priceNoVat = item.priceNoVat ?? item.unitNoVat ?? item.unit_price_no_vat ?? item.price ?? '';
+      const valueNoVat = item.valueNoVat ?? item.value_no_vat ?? item.lineNoVat ?? '';
+      const vat = item.vat ?? item.lineVat ?? item.vatTotal ?? '';
+      const vatRate = item.vatRate ?? item.vat_rate ?? item.rateVat ?? 21;
+      return {
+        name: item.name || item.description || item.title || '',
+        qty,
+        um: item.um || item.unit || item.uom || 'buc',
+        priceNoVat,
+        vat,
+        valueNoVat,
+        vatRate,
+      };
+    }
+
+    function createItemRow(item = {}) {
+      const row = document.createElement('div');
+      row.className = 'table-row';
+      const normalized = normalizeItem(item);
+
+      const cells = [
+        { value: normalized.name, placeholder: 'Denumire produs', cls: 'name', field: 'name' },
+        { value: normalized.qty, placeholder: '1', field: 'qty' },
+        { value: normalized.um, placeholder: 'buc', field: 'um' },
+        { value: normalized.priceNoVat, placeholder: '0.00', field: 'priceNoVat' },
+        { value: normalized.vatRate, placeholder: '21', field: 'vatRate' },
+        { value: normalized.vat, placeholder: '—', field: 'vat' },
+        { value: normalized.valueNoVat, placeholder: '—', field: 'valueNoVat' },
+      ];
+
+      cells.forEach((cell) => {
+        const span = document.createElement('span');
+        if (cell.cls) {
+          span.className = cell.cls;
+        }
+        if (cell.field === 'vatRate') {
+          span.appendChild(createVatRateSelect(cell.value));
+        } else {
+          const input = createItemInput(cell.value, cell.placeholder, cell.cls === 'name' ? 'name' : '', cell.field || '');
+          if (cell.field === 'vat') {
+            input.readOnly = true;
+          }
+          if (cell.field) {
+            input.dataset.field = cell.field;
+          }
+          span.appendChild(input);
+        }
+        row.appendChild(span);
+      });
+
+      const actionCell = document.createElement('span');
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'row-delete';
+      deleteBtn.textContent = 'X';
+      deleteBtn.setAttribute('aria-label', 'Sterge rand');
+      deleteBtn.addEventListener('click', () => {
+        row.remove();
+        if (!document.querySelectorAll('.table-row').length) {
+          addItemRow({});
+        }
+        renderTotals({});
+      });
+      actionCell.appendChild(deleteBtn);
+      row.appendChild(actionCell);
+
+      return row;
+    }
+
+    function recalcItemRow(row) {
+      if (!row) {
+        return;
+      }
+      const qtyInput = row.querySelector('input[data-field="qty"]');
+      const priceInput = row.querySelector('input[data-field="priceNoVat"]');
+      const vatInput = row.querySelector('input[data-field="vat"]');
+      const valueInput = row.querySelector('input[data-field="valueNoVat"]');
+      const vatRateSelect = row.querySelector('.vat-rate');
+
+      const qty = parseNumericValue(qtyInput?.value);
+      const priceNoVat = parseNumericValue(priceInput?.value);
+      const manualValue = parseNumericValue(valueInput?.value);
+      const vatRate = parseNumericValue(vatRateSelect?.value ?? '21');
+      const hasAutoValue = String(qtyInput?.value ?? '').trim() !== '' && String(priceInput?.value ?? '').trim() !== '';
+      const hasManualValue = String(valueInput?.value ?? '').trim() !== '';
+      const computedValue = hasAutoValue ? qty * priceNoVat : manualValue;
+      const computedVat = hasAutoValue ? computedValue * (vatRate / 100) : parseNumericValue(vatInput?.value);
+      if (valueInput) {
+        if (hasAutoValue) {
+          valueInput.value = computedValue.toFixed(2);
+        } else if (hasManualValue) {
+          valueInput.value = sanitizeNumericInput(valueInput);
+        } else {
+          valueInput.value = '';
+        }
+      }
+      if (vatInput) {
+        if (hasAutoValue) {
+          vatInput.value = computedVat.toFixed(2);
+        } else if (String(vatInput.value ?? '').trim()) {
+          vatInput.value = sanitizeNumericInput(vatInput);
+        } else {
+          vatInput.value = '';
+        }
+      }
+    }
+
+    function recalcAllItemRows() {
+      document.querySelectorAll('.table-row').forEach((row) => {
+        recalcItemRow(row);
+      });
+    }
+
+    function addItemRow(item = {}) {
+      const row = createItemRow(item);
+      row.querySelectorAll('input[data-numeric="true"]').forEach((input) => sanitizeNumericInput(input));
+      recalcItemRow(row);
+      recalcAllItemRows();
+      table.appendChild(row);
+      const lastRow = table.querySelector('.table-row:last-of-type');
+      const firstInput = lastRow?.querySelector('input');
+      if (firstInput) {
+        firstInput.focus();
+      }
+      renderTotals({});
+    }
+
+    function renderItems(items) {
+      document.querySelectorAll('.table-row').forEach((row) => row.remove());
+      const normalizedItems = Array.isArray(items) ? items.map((item) => normalizeItem(item)) : [];
+      const count = Math.max(4, normalizedItems.length);
+      for (let index = 0; index < count; index += 1) {
+        addItemRow(normalizedItems?.[index] || {});
+      }
+      recalcAllItemRows();
+      renderTotals({
+        items: normalizedItems,
+        vatRate: 21,
+      });
+    }
+
+    function readItemsFromTable() {
+      return Array.from(document.querySelectorAll('.table-row')).map((row) => {
+        const nameInput = row.querySelector('input[data-field="name"]');
+        const qtyInput = row.querySelector('input[data-field="qty"]');
+        const umInput = row.querySelector('input[data-field="um"]');
+        const priceInput = row.querySelector('input[data-field="priceNoVat"]');
+        const vatInput = row.querySelector('input[data-field="vat"]');
+        const valueInput = row.querySelector('input[data-field="valueNoVat"]');
+        const vatRate = row.querySelector('.vat-rate');
+        return {
+          name: nameInput?.value.trim() || '',
+          qty: sanitizeNumericInput(qtyInput) || qtyInput?.value.trim() || '',
+          um: umInput?.value.trim() || '',
+          priceNoVat: sanitizeNumericInput(priceInput) || priceInput?.value.trim() || '',
+          vat: sanitizeNumericInput(vatInput) || vatInput?.value.trim() || '',
+          valueNoVat: sanitizeNumericInput(valueInput) || valueInput?.value.trim() || '',
+          vatRate: vatRate?.value || '21',
+        };
+      }).filter((item) => Object.values(item).some((value) => value));
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result || '');
+          const commaIndex = result.indexOf(',');
+          resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+        };
+        reader.onerror = () => reject(new Error('Nu am putut citi fisierul selectat.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    choices.forEach((choice) => {
+      choice.addEventListener('click', () => {
+        choices.forEach((c) => c.classList.remove('active'));
+        choice.classList.add('active');
+        selectedType = choice.dataset.type;
+        resetProcessingState();
+        hideDownload();
+      });
+    });
+
+    goToUpload.addEventListener('click', () => {
+      const label = selectedType === 'servicii' ? 'Servicii' : 'Produse';
+      summary.innerHTML = `Tip selectat: <strong>${label}</strong>`;
+      screen1.classList.remove('active');
+      screen2.classList.add('active');
+      screen3.classList.remove('active');
+      updateContinueState();
+    });
+
+    backToType.addEventListener('click', () => {
+      screen2.classList.remove('active');
+      screen1.classList.add('active');
+      screen3.classList.remove('active');
+      hideDownload();
+    });
+
+    continueToUpload.addEventListener('click', () => {
+      if (continueToUpload.disabled) {
+        return;
+      }
+      screen2.classList.remove('active');
+      screen3.classList.add('active');
+      hideDownload();
+    });
+
+    backToStep2.addEventListener('click', () => {
+      screen3.classList.remove('active');
+      screen2.classList.add('active');
+      hideDownload();
+    });
+
+    uploadBox.addEventListener('click', () => {
+      offerFileInput.click();
+    });
+
+    offerFileInput.addEventListener('change', () => {
+      const files = Array.from(offerFileInput.files || []);
+      if (files.length > 2) {
+        setResult('Eroare', 'Selecteaza maximum doua fisiere pentru oferta.');
+        offerFileInput.value = '';
+        setOfferFile([]);
+        return;
+      }
+      setOfferFile(files.slice(0, 2));
+      if (files.length) {
+        processOfferFile();
+      }
+    });
+
+    setOfferFile(null);
+    renderItems([]);
+    appVersion.textContent = `Build ${APP_VERSION}`;
+
+    [contractNoInput, offerNoInput].forEach((input) => {
+      input.addEventListener('input', updateContinueState);
+    });
+
+    updateContinueState();
+
+    processOfferBtn.addEventListener('click', async () => {
+      await processOfferFile();
+    });
+
+    addRowBtn.addEventListener('click', () => {
+      addItemRow({});
+    });
+
+    table.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+        return;
+      }
+      const row = target.closest('.table-row');
+      if (!row) {
+        return;
+      }
+      if (target instanceof HTMLInputElement && target.dataset.numeric === 'true') {
+        sanitizeNumericInput(target);
+      }
+      recalcItemRow(row);
+      renderTotals({});
+    });
+
+    table.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+        return;
+      }
+      const row = target.closest('.table-row');
+      if (!row) {
+        return;
+      }
+      recalcItemRow(row);
+      renderTotals({});
+    });
+
+    const resyncTableRow = (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+        return;
+      }
+      const row = target.closest('.table-row');
+      if (!row) {
+        return;
+      }
+      requestAnimationFrame(() => {
+        recalcItemRow(row);
+        renderTotals({});
+      });
+    };
+
+    table.addEventListener('keyup', resyncTableRow);
+    table.addEventListener('paste', resyncTableRow);
+    table.addEventListener('cut', resyncTableRow);
+    document.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+        return;
+      }
+      if (!target.closest('.table-row')) {
+        return;
+      }
+      recalcAllItemRows();
+      renderTotals({});
+    }, true);
+    document.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+        return;
+      }
+      if (!target.closest('.table-row')) {
+        return;
+      }
+      recalcAllItemRows();
+      renderTotals({});
+    }, true);
+
+    setInterval(() => {
+      if (!document.querySelector('.table-row')) {
+        return;
+      }
+      recalcAllItemRows();
+      renderTotals({});
+    }, 250);
+
+    applyJsonBtn.addEventListener('click', applyOfferJson);
+
+    generateBtn.addEventListener('click', () => {
+      if (!offerProcessed) {
+        setResult('Blocat', 'Proceseaza oferta inainte sa generezi contractul.');
+        return;
+      }
+      const payload = buildContractPayload();
+      latestContractPayload = payload;
+
+      fetch('http://127.0.0.1:8000/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            let message = 'Generarea contractului a esuat.';
+            try {
+              const payload = await response.json();
+              if (payload?.error) {
+                message = payload.error;
+              }
+            } catch (err) {
+              try {
+                const text = await response.text();
+                if (text) {
+                  message = text;
+                }
+              } catch (_) {}
+            }
+            throw new Error(message);
+          }
+          const blob = await response.blob();
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+          }
+          objectUrl = URL.createObjectURL(blob);
+          downloadLink.href = objectUrl;
+          downloadLink.download = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || `contract_${selectedType}.docx`;
+          downloadLink.style.display = 'inline-flex';
+          setResult('Contract generat', 'Fisierul este pregatit pentru descarcare. Apasa pe butonul din dreapta.');
+          pvAsk.classList.remove('hidden');
+        })
+        .catch((error) => {
+          setResult('Eroare', error.message);
+        });
+    });
+
+    pvYesBtn.addEventListener('click', () => {
+      openPvScreen();
+    });
+
+    pvNoBtn.addEventListener('click', () => {
+      pvAsk.classList.add('hidden');
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    pvNoInput.addEventListener('input', updatePvGenerateState);
+    pvPreviousCheckInput.addEventListener('change', updatePvPreviousValueState);
+
+    backToContractBtn.addEventListener('click', () => {
+      closePvScreen();
+    });
+
+    generatePvBtn.addEventListener('click', () => {
+      const payload = buildPvPayload();
+      generatePvBtn.disabled = true;
+      pvResult.hidden = false;
+      pvResult.innerHTML = '<h3>Procesare</h3><p>Generez procesul verbal dupa modelul ales.</p>';
+
+      fetch('http://127.0.0.1:8000/api/generate-pv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            let message = 'Generarea procesului verbal a esuat.';
+            try {
+              const body = await response.json();
+              if (body?.error) {
+                message = body.error;
+              }
+            } catch (err) {
+              try {
+                const text = await response.text();
+                if (text) {
+                  message = text;
+                }
+              } catch (_) {}
+            }
+            throw new Error(message);
+          }
+          const blob = await response.blob();
+          if (pvObjectUrl) {
+            URL.revokeObjectURL(pvObjectUrl);
+          }
+          pvObjectUrl = URL.createObjectURL(blob);
+          downloadPvLink.href = pvObjectUrl;
+          downloadPvLink.download = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'proces_verbal.docx';
+          downloadPvLink.style.display = 'inline-flex';
+          pvResult.innerHTML = '<h3>Proces verbal generat</h3><p>Fisierul este pregatit pentru descarcare.</p>';
+        })
+        .catch((error) => {
+          pvResult.innerHTML = `<h3>Eroare</h3><p>${error.message}</p>`;
+        })
+        .finally(() => {
+          generatePvBtn.disabled = false;
+        });
+    });
+  </script>
+</body>
+</html>

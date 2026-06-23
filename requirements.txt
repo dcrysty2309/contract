@@ -1,0 +1,2 @@
+olefile
+python-docx
