@@ -1041,6 +1041,57 @@
     const totalsPanel = document.getElementById('totals-panel');
     const appVersion = document.getElementById('app-version');
     const APP_VERSION = '2026-06-18-1';
+    const API_BASE_URL = 'http://127.0.0.1:8000';
+    const DEMO_MODE = location.protocol === 'file:' || location.hostname.endsWith('github.io');
+    const DEMO_PAYLOADS = {
+      produse: {
+        supplier: 'ADVANCED AI SOLUTIONS SRL',
+        cui: 'RO50103053',
+        reg_com: 'J12/2369/2024',
+        address: 'Str. Hameiului 3/22, Cluj-Napoca',
+        delivery_address: 'Str. Fabricii nr. 12, Cluj-Napoca',
+        contact: '+40 747 544 677 / stefan.rusu@aisolutions.ro',
+        representative: 'Ștefan Rusu',
+        role: 'Administrator',
+        offerNumber: '04/12.06.2026',
+        issueDate: '12.06.2026',
+        garantie: '24',
+        vatRate: 21,
+        currency: 'RON',
+        items: [
+          { name: 'Laptop business 14"', description: 'Ultrabook pentru activitate office', um: 'buc', qty: 2, priceNoVat: 3980, valueNoVat: 7960, vat: 1671.6 },
+          { name: 'Docking station USB-C', description: 'Compatibil universal', um: 'buc', qty: 2, priceNoVat: 520, valueNoVat: 1040, vat: 218.4 },
+          { name: 'Monitor 27"', description: 'IPS, 2K', um: 'buc', qty: 2, priceNoVat: 1090, valueNoVat: 2180, vat: 457.8 },
+        ],
+        subtotalNoVat: 11180,
+        totalVat: 2347.8,
+        totalWithVat: 13527.8,
+        warnings: ['Date de demonstrație, folosite când backend-ul nu este disponibil.'],
+      },
+      servicii: {
+        supplier: 'ADVANCED AI SOLUTIONS SRL',
+        cui: 'RO50103053',
+        reg_com: 'J12/2369/2024',
+        address: 'Str. Hameiului 3/22, Cluj-Napoca',
+        delivery_address: 'Servicii la sediul beneficiarului',
+        contact: '+40 747 544 677 / stefan.rusu@aisolutions.ro',
+        representative: 'Ștefan Rusu',
+        role: 'Administrator',
+        offerNumber: 'S-18/12.06.2026',
+        issueDate: '12.06.2026',
+        garantie: '12',
+        vatRate: 21,
+        currency: 'RON',
+        items: [
+          { name: 'Analiză cerințe și configurare', description: 'Workshop inițial și configurare platformă', um: 'serv', qty: 1, priceNoVat: 1800, valueNoVat: 1800, vat: 378 },
+          { name: 'Implementare și testare', description: 'Configurare, verificare și demo', um: 'serv', qty: 1, priceNoVat: 3200, valueNoVat: 3200, vat: 672 },
+        ],
+        subtotalNoVat: 5000,
+        totalVat: 1050,
+        totalWithVat: 6050,
+        warnings: ['Date de demonstrație, folosite când backend-ul nu este disponibil.'],
+      },
+    };
     const tableHead = table.querySelector('.table-head');
     const tableBodyRows = Array.from(document.querySelectorAll('.table-row'));
     let selectedType = 'produse';
@@ -1049,6 +1100,7 @@
     let offerProcessed = false;
     let latestContractPayload = null;
     let selectedOfferFiles = [];
+    let demoModeActive = DEMO_MODE;
 
     function updateContinueState() {
       const contractNo = contractNoInput.value.trim();
@@ -1075,6 +1127,91 @@
         URL.revokeObjectURL(pvObjectUrl);
         pvObjectUrl = null;
       }
+    }
+
+    function cloneDemoPayload(kind) {
+      const base = DEMO_PAYLOADS[kind] || DEMO_PAYLOADS.produse;
+      return JSON.parse(JSON.stringify({
+        type: kind,
+        ...base,
+      }));
+    }
+
+    function applyOfferPayload(payload, resultTitle, resultText, options = {}) {
+      const normalized = {
+        supplier: payload?.supplier || '',
+        cui: payload?.cui || '',
+        reg_com: payload?.reg_com || '',
+        address: payload?.address || '',
+        delivery_address: payload?.delivery_address || '',
+        contact: payload?.contact || '',
+        representative: payload?.representative || '',
+        role: payload?.role || '',
+        garantie: payload?.garantie || '',
+        offerNumber: payload?.offerNumber || '',
+        issueDate: payload?.issueDate || '',
+        vatRate: payload?.vatRate ?? 21,
+        currency: payload?.currency || 'RON',
+        items: Array.isArray(payload?.items) ? payload.items : [],
+        subtotalNoVat: payload?.subtotalNoVat ?? 0,
+        totalVat: payload?.totalVat ?? 0,
+        totalWithVat: payload?.totalWithVat ?? 0,
+        warnings: Array.isArray(payload?.warnings) ? payload.warnings : [],
+      };
+      setInputValue(supplierInput, normalized.supplier);
+      setInputValue(supplierCuiInput, normalized.cui);
+      setInputValue(supplierRegComInput, normalized.reg_com);
+      setInputValue(supplierAddressInput, normalized.address);
+      setInputValue(deliveryAddressInput, normalized.delivery_address);
+      setInputValue(supplierContactInput, normalized.contact);
+      setInputValue(supplierRepresentativeInput, normalized.representative);
+      setInputValue(supplierRoleInput, normalized.role);
+      setInputValue(supplierGarantieInput, normalized.garantie);
+      setInputValue(offerNoInput, normalized.offerNumber);
+      renderItems(normalized.items || []);
+      renderTotals(normalized);
+      renderOfferJson(normalized);
+      offerProcessed = true;
+      demoModeActive = Boolean(options.demoMode);
+      generateBtn.disabled = false;
+      offerFileBadge.textContent = options.demoMode ? 'demo' : 'procesat';
+      setResult(resultTitle, resultText);
+      latestContractPayload = null;
+    }
+
+    function buildTextBlob(kind, payload) {
+      const lines = [];
+      lines.push(`ContractFlow demo - ${kind === 'servicii' ? 'servicii' : 'produse'}`);
+      lines.push(`Furnizor: ${payload.supplier || '________'}`);
+      lines.push(`Oferta: ${payload.offerNumber || '________'}`);
+      lines.push(`Data: ${payload.issueDate || '________'}`);
+      lines.push('');
+      lines.push('Articole:');
+      (payload.items || []).forEach((item, index) => {
+        lines.push(`${index + 1}. ${item.name || '________'} - ${Number(item.qty || 0)} x ${Number(item.priceNoVat || 0).toFixed(2)} RON`);
+      });
+      lines.push('');
+      lines.push(`Subtotal: ${Number(payload.subtotalNoVat || 0).toFixed(2)} RON`);
+      lines.push(`TVA: ${Number(payload.totalVat || 0).toFixed(2)} RON`);
+      lines.push(`Total: ${Number(payload.totalWithVat || 0).toFixed(2)} RON`);
+      return new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    }
+
+    function buildDemoContractDownload(payload) {
+      const html = `<!doctype html><html lang="ro"><head><meta charset="utf-8"><title>Contract demo</title><style>body{font-family:Segoe UI,Arial,sans-serif;padding:32px;line-height:1.5}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f4f6f8}</style></head><body><h1>ContractFlow demo</h1><p><strong>Furnizor:</strong> ${payload.supplier || '________'}</p><p><strong>Oferta:</strong> ${payload.offerNumber || '________'}</p><table><thead><tr><th>Produs/serviciu</th><th>Cant.</th><th>Preț fără TVA</th><th>Valoare fără TVA</th></tr></thead><tbody>${(payload.items || []).map((item) => `<tr><td>${item.name || ''}</td><td>${Number(item.qty || 0)}</td><td>${Number(item.priceNoVat || 0).toFixed(2)}</td><td>${Number(item.valueNoVat || 0).toFixed(2)}</td></tr>`).join('')}</tbody></table><p><strong>Total:</strong> ${Number(payload.totalWithVat || 0).toFixed(2)} RON</p><p>Acesta este un fișier demo generat în browser.</p></body></html>`;
+      return new Blob([html], { type: 'text/html;charset=utf-8' });
+    }
+
+    function buildDemoPvDownload(payload) {
+      return buildTextBlob('proces-verbal', payload);
+    }
+
+    async function postJson(path, body) {
+      return fetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
     }
 
     function todayRomanianDate() {
@@ -1328,11 +1465,7 @@
         setInputValue(supplierRepresentativeInput, payload.representative);
         setInputValue(supplierRoleInput, payload.role);
         setInputValue(supplierGarantieInput, payload.garantie);
-        renderItems(payload.items || []);
-        renderTotals(payload);
-        offerProcessed = true;
-        generateBtn.disabled = false;
-        setResult('JSON aplicat', 'Formularul a fost actualizat din JSON-ul editat.');
+        applyOfferPayload(payload, 'JSON aplicat', 'Formularul a fost actualizat din JSON-ul editat.', { demoMode: false });
       } catch (error) {
         setResult('Eroare JSON', 'Nu am putut citi JSON-ul editat: ' + error.message);
       }
@@ -1385,6 +1518,10 @@
       setResult('Procesare', 'Citesc oferta si extrag datele relevante.');
 
       try {
+        if (demoModeActive) {
+          applyOfferPayload(cloneDemoPayload(selectedType), 'Demo activ', 'Am încărcat date de demonstrație în browser.', { demoMode: true });
+          return;
+        }
         const [primaryFile, ...extraFiles] = files;
         const fileData = await fileToBase64(primaryFile);
         const extraPayload = await Promise.all(extraFiles.map(async (file, index) => ({
@@ -1393,16 +1530,12 @@
           file_data: await fileToBase64(file),
           index,
         })));
-        const response = await fetch('http://127.0.0.1:8000/api/extract', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: selectedType,
-            file_name: primaryFile.name,
-            mime_type: primaryFile.type || '',
-            file_data: fileData,
-            files: extraPayload,
-          }),
+        const response = await postJson('/api/extract', {
+          type: selectedType,
+          file_name: primaryFile.name,
+          mime_type: primaryFile.type || '',
+          file_data: fileData,
+          files: extraPayload,
         });
 
         if (!response.ok) {
@@ -1415,30 +1548,16 @@
         }
 
         const payload = await response.json();
-        setInputValue(supplierInput, payload.supplier);
-        setInputValue(supplierCuiInput, payload.cui);
-        setInputValue(supplierRegComInput, payload.reg_com);
-        setInputValue(supplierAddressInput, payload.address);
-        setInputValue(deliveryAddressInput, payload.delivery_address);
-        setInputValue(supplierContactInput, payload.contact);
-        setInputValue(supplierRepresentativeInput, payload.representative);
-        setInputValue(supplierRoleInput, payload.role);
-        setInputValue(supplierGarantieInput, payload.garantie);
-        if (payload.offerNumber) {
-          setInputValue(offerNoInput, payload.offerNumber);
-        }
-        renderItems(payload.items || []);
-        renderTotals(payload);
-        renderOfferJson(payload);
-        offerProcessed = true;
-        generateBtn.disabled = false;
-        offerFileBadge.textContent = 'procesat';
-        setResult('Oferta procesata', `Au fost extrase ${Array.isArray(payload.items) ? payload.items.length : 0} pozitii din oferta. Poti corecta direct JSON-ul sau campurile din formular.`);
+        applyOfferPayload(payload, 'Oferta procesata', `Au fost extrase ${Array.isArray(payload.items) ? payload.items.length : 0} pozitii din oferta. Poti corecta direct JSON-ul sau campurile din formular.`, { demoMode: false });
       } catch (error) {
-        offerProcessed = false;
-        generateBtn.disabled = true;
-        offerFileBadge.textContent = 'eroare';
-        setResult('Eroare', error.message);
+        try {
+          applyOfferPayload(cloneDemoPayload(selectedType), 'Demo activ', `Backend-ul nu este disponibil, asa ca am incarcat un exemplu local. ${error.message}`, { demoMode: true });
+        } catch (fallbackError) {
+          offerProcessed = false;
+          generateBtn.disabled = true;
+          offerFileBadge.textContent = 'eroare';
+          setResult('Eroare', fallbackError.message || error.message);
+        }
       } finally {
         processOfferBtn.textContent = 'Proceseaza cu AI';
         processOfferBtn.disabled = !selectedOfferFiles.length;
@@ -1856,11 +1975,21 @@
       const payload = buildContractPayload();
       latestContractPayload = payload;
 
-      fetch('http://127.0.0.1:8000/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      if (demoModeActive) {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
+        const blob = buildDemoContractDownload(payload);
+        objectUrl = URL.createObjectURL(blob);
+        downloadLink.href = objectUrl;
+        downloadLink.download = 'contract_demo.html';
+        downloadLink.style.display = 'inline-flex';
+        setResult('Contract demo generat', 'Acesta este un preview local pentru demo. Pe GitHub Pages nu ruleaza backend-ul Python.');
+        pvAsk.classList.remove('hidden');
+        return;
+      }
+
+      postJson('/api/generate', payload)
         .then(async (response) => {
           if (!response.ok) {
             let message = 'Generarea contractului a esuat.';
@@ -1917,11 +2046,21 @@
       pvResult.hidden = false;
       pvResult.innerHTML = '<h3>Procesare</h3><p>Generez procesul verbal dupa modelul ales.</p>';
 
-      fetch('http://127.0.0.1:8000/api/generate-pv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      if (demoModeActive) {
+        if (pvObjectUrl) {
+          URL.revokeObjectURL(pvObjectUrl);
+        }
+        const blob = buildDemoPvDownload(payload);
+        pvObjectUrl = URL.createObjectURL(blob);
+        downloadPvLink.href = pvObjectUrl;
+        downloadPvLink.download = 'proces_verbal_demo.txt';
+        downloadPvLink.style.display = 'inline-flex';
+        pvResult.innerHTML = '<h3>Proces verbal demo generat</h3><p>Acesta este un preview local pentru demo.</p>';
+        generatePvBtn.disabled = false;
+        return;
+      }
+
+      postJson('/api/generate-pv', payload)
         .then(async (response) => {
           if (!response.ok) {
             let message = 'Generarea procesului verbal a esuat.';
